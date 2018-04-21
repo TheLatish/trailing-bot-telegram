@@ -2,7 +2,7 @@ import telebot,json,os
 from urllib import request
 from multiprocessing import Process
 #from binance.client import Client
-bot = telebot.TeleBot("565397863:AAFIvwTm_QE5CYGu_bRSHh6paZWpltM_zMc")
+bot = telebot.TeleBot("TOCKEN")
 #This function adds json of user. It contains message id, username, transactions list, api and secret key. This json is added to q.vadim file
 @bot.message_handler(regexp= "new_member\s[A-Za-z0-9]{16}\s[A-Za-z0-9]{16}")
 def a1(msg):

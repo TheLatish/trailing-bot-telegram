@@ -1,10 +1,11 @@
+from math import floor
 import telebot,json,os #Imports to use telegrambot, jsonfiles, and send all json beauty in server
 from urllib import request #Just for requests
 from multiprocessing import Process #We need multiprocessing, because we should use telegram bot and check binance prices
 from binance.client import BinanceRESTAPI #We need this to buy and send yours tokens
 
 #Creating bot
-bot = telebot.TeleBot("Super secret key")
+bot = telebot.TeleBot("565397863:AAFIvwTm_QE5CYGu_bRSHh6paZWpltM_zMc")
 
 #This function tells to user information about the bot
 @bot.message_handler(commands = ['start','help'])
@@ -74,8 +75,7 @@ def update_prices():
 	request_answer = json.loads(request.urlopen("https://api.binance.com/api/v3/ticker/price").read().decode("utf-8"))
 	#Opening JSON file
 	with open("q.vadim", "r") as outfile:
-		main_file = json.load(outfile)
-	
+		main_file = json.load(outfile)	
 	for symbol in request_answer:
 		#Updating price_now
 		main_file["price_now"][symbol["symbol"]] = float(symbol["price"])
@@ -126,7 +126,8 @@ def close_orders(trade):
 			break
 
 
-	money_to_sold = roundDown(money_to_sold, to_number(min_qty))
+	money_to_sold = roundDown(money_to_sold, to_number(float(min_qty)))
+	print(money_to_sold)
 	order = client.new_order(trade["ticker"],"SELL","MARKET",None, money_to_sold)
 	bot.send_message(owner_id, "I have put order. Ticker: {}".format(trade["ticker"]))
 	with open("q.vadim", "w") as outfile:

@@ -142,7 +142,7 @@ if __name__ == "__main__":
 	t1.start()
 	#Starting polling
 	try:
-        bot.polling(none_stop=True)
+		bot.polling(none_stop=True)
 
 	except Exception as err:
 		time.sleep(5)

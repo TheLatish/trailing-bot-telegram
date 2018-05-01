@@ -84,54 +84,52 @@ def update_prices():
 		json.dump(main_file,outfile)
 
 def find_orders_to_close():
+	with open("q.vadim", "r") as outfile:
+		main_file = json.load(outfile)
+	if main_file["trades"] != []:
+		for trade in main_file["trades"]:
+			#Updating local maximums for each trade
+			if main_file["price_now"][trade["ticker"]] >  trade["local_maximum"]:
+				trade["local_maximum"] = main_file["price_now"][trade["ticker"]]
+			#Checking trailing stop percents
+			if float(trade["trailing_stop_percent"]) <=  (1 - main_file["price_now"][trade["ticker"]]/trade["local_maximum"])*100:
+				trade["to_close"]= True
+				close_orders(trade)
+		#Deleting all closing orders
+		for trade in main_file["trades"]:
+			if trade["to_close"] == True:
+				main_file["trades"].remove(trade)
+	with open("q.vadim", "w") as outfile:
+		json.dump(main_file,outfile)
+
+def close_orders(trade):
 	try:
 		with open("q.vadim", "r") as outfile:
 			main_file = json.load(outfile)
-		if main_file["trades"] != []:
-			for trade in main_file["trades"]:
-				#Updating local maximums for each trade
-				if main_file["price_now"][trade["ticker"]] >  trade["local_maximum"]:
-					trade["local_maximum"] = main_file["price_now"][trade["ticker"]]
-				#Checking trailing stop percents
-				if float(trade["trailing_stop_percent"]) <=  (1 - main_file["price_now"][trade["ticker"]]/trade["local_maximum"])*100:
-					trade["to_close"]= True
-					close_orders(trade)
-			#Deleting all closing orders
-			for trade in main_file["trades"]:
-				if trade["to_close"] == True:
-					main_file["trades"].remove(trade)
+		owner = str(trade['owner_id'])
+		client = BinanceRESTAPI(main_file[owner]["api"], main_file[owner]["secret"])
+
+		account = client.account()
+		money_to_sold = 0
+		min_qty = 0
+		exchange_rules = json.loads(request.urlopen("https://api.binance.com/api/v1/exchangeInfo").read().decode("utf-8"))
+		for symbol in exchange_rules["symbols"]:
+			if symbol["symbol"] == trade["ticker"]:
+				min_qty = symbol["filters"][1]["minQty"]
+				break
+			
+		for balance in account.balances:
+			if balance.asset + "BTC" == trade["ticker"] or balance.asset + "USDT" == trade["ticker"] or balance.asset + "BNB" == trade["ticker"] or balance.asset + "ETH" == trade["ticker"]:
+				money_to_sold = float(balance.free)
+				break
+		money_to_sold = roundDown(money_to_sold, to_number(float(min_qty)))
+		print(trade["ticker"], "SELL", "MARKET", money_to_sold)
+		order = client.new_order(trade["ticker"],"SELL","MARKET",None, money_to_sold)
+		bot.send_message(trade["owner_id"], "I have put order. Ticker: {}".format(trade["ticker"]))
 		with open("q.vadim", "w") as outfile:
 			json.dump(main_file,outfile)
 	except Exception as e:
 		bot.send_message(123446626, e)
-
-def close_orders(trade):
-	with open("q.vadim", "r") as outfile:
-		main_file = json.load(outfile)
-	owner = str(trade['owner_id'])
-	client = BinanceRESTAPI(main_file[owner]["api"], main_file[owner]["secret"])
-
-	account = client.account()
-	money_to_sold = 0
-	min_qty = 0
-	exchange_rules = json.loads(request.urlopen("https://api.binance.com/api/v1/exchangeInfo").read().decode("utf-8"))
-	for symbol in exchange_rules["symbols"]:
-		if symbol["symbol"] == trade["ticker"]:
-			min_qty = symbol["filters"][1]["minQty"]
-			break
-		
-	for balance in account.balances:
-		if balance.asset + "BTC" == trade["ticker"] or balance.asset + "USDT" == trade["ticker"] or balance.asset + "BNB" == trade["ticker"] or balance.asset + "ETH" == trade["ticker"]:
-			money_to_sold = float(balance.free)
-			break
-
-
-	money_to_sold = roundDown(money_to_sold, to_number(float(min_qty)))
-	print(trade["ticker"], "SELL", "MARKET", money_to_sold)
-	order = client.new_order(trade["ticker"],"SELL","MARKET",None, money_to_sold)
-	bot.send_message(owner_id, "I have put order. Ticker: {}".format(trade["ticker"]))
-	with open("q.vadim", "w") as outfile:
-		json.dump(main_file,outfile)
 
 if __name__ == "__main__":
 	print("Programm is starting")

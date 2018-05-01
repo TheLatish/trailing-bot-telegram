@@ -1,4 +1,4 @@
-from math import floor
+from math import floor #Rounds down
 import telebot,json,os #Imports to use telegrambot, jsonfiles, and send all json beauty in server
 from urllib import request #Just for requests
 from multiprocessing import Process #We need multiprocessing, because we should use telegram bot and check binance prices
@@ -127,7 +127,7 @@ def close_orders(trade):
 
 
 	money_to_sold = roundDown(money_to_sold, to_number(float(min_qty)))
-	print(money_to_sold)
+	print(trade["ticker"], "SELL", "MARKET", money_to_sold)
 	order = client.new_order(trade["ticker"],"SELL","MARKET",None, money_to_sold)
 	bot.send_message(owner_id, "I have put order. Ticker: {}".format(trade["ticker"]))
 	with open("q.vadim", "w") as outfile:

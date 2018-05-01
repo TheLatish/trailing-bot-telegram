@@ -3,6 +3,7 @@ import telebot,json,os #Imports to use telegrambot, jsonfiles, and send all json
 from urllib import request #Just for requests
 from multiprocessing import Process #We need multiprocessing, because we should use telegram bot and check binance prices
 from binance.client import BinanceRESTAPI #We need this to buy and send yours tokens
+import time #Just time library to sleep thread
 
 #Creating bot
 bot = telebot.TeleBot("565397863:AAFIvwTm_QE5CYGu_bRSHh6paZWpltM_zMc")

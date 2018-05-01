@@ -141,4 +141,9 @@ if __name__ == "__main__":
 	t1 = Process(target= main_loop)
 	t1.start()
 	#Starting polling
-	bot.polling(none_stop=True)
+	try:
+        bot.polling(none_stop=True)
+
+	except Exception as err:
+		time.sleep(5)
+		print("Internet error")

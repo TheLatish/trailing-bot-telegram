@@ -4,6 +4,9 @@ from urllib import request #Just for requests
 from multiprocessing import Process #We need multiprocessing, because we should use telegram bot and check binance prices
 from binance.client import BinanceRESTAPI #We need this to buy and send yours tokens
 import time #Just time library to sleep thread
+import hashlib #Hash as a key of transaction
+
+#TODO Write orders ID. Write function to get info about order or orders. Write function to cancel order
 
 #Creating bot
 bot = telebot.TeleBot("565397863:AAFIvwTm_QE5CYGu_bRSHh6paZWpltM_zMc")
@@ -33,20 +36,42 @@ def a1(msg):
 #This function adds transactions to the list off transactions
 @bot.message_handler(regexp = "add_transaction\s[A-Z]{3,10}\sTR\s[0-9]{1,2}")
 def a2(msg):
-	print("New message: " + msg.text)
+	print("New transaction message: " + msg.text)
 	msg_text = msg.text.split(" ")
 	if msg_text[0] == "add_transaction" and len(msg_text[1]) <= 10 and msg_text[2] == "TR" and msg_text[3].isdigit():
 		with open("q.vadim", "r") as outfile:
 			main_file = json.load(outfile)
 
 		msg_text = msg.text.split(" ")
-		main_file["trades"].append({"owner_id":msg.from_user.id, "ticker":msg_text[1], "trailing_stop_percent":msg_text[3], "local_maximum": 0, "to_close":False})
+		hash_of_transaction = hashlib.sha256(byte(msg.from_user.id), byte(msg_text[1]), byte(msg_text[3])).hexdigest()
+		main_file["trades"].append({"owner_id":msg.from_user.id, "ticker":msg_text[1], "trailing_stop_percent":msg_text[3], "local_maximum": 0, "to_close":False, "hash_of_transaction": hash_of_transaction})
 		with open("q.vadim","w") as outfile:
 			json.dump(main_file, outfile)
-		bot.send_message(msg.from_user.id, "Your order is added. Your ID is {}. Your ticker is {}. Your trailing stop percent is {}%. Price now is {}.".format(msg.from_user.id,msg_text[1],msg_text[3],main_file["price_now"][msg_text[1]]))
+		bot.send_message(msg.from_user.id, "Your order is added. Your transaction ID is {}. With it you can get information about your transaction. Your ID is {}. Your ticker is {}. Your trailing stop percent is {}%. Price now is {}.".format(hash_of_transaction , msg.from_user.id,msg_text[1],msg_text[3],main_file["price_now"][msg_text[1]]))
 	else:
 		bot.send_message(msg.from_user.id, "Your order isn't added. Message should be in format: add_transaction {FIRSTCURRENCYSECONDCURRENCY} TR {PERCENT}. For example: add_transaction BTCUSDT TR 4")
 
+#Informing about trades
+@bot.message_handler(regexp = ["trades_info\s"])
+def a4(msg):
+	print("New info about order message: " + msg.text)
+	msg_text = msg.text.split(" ")
+	with open("q.vadim", "r") as outfile:
+			main_file = json.load(outfile)
+	if len(msg_text) == 1:
+		for trade in main_file["trades"]:
+			if trade["id"] == msg.from_user.id:
+				percent_to_end_the_trade = trade["trailing_stop_percent"] - (1 - main_file["price_now"][trade["ticker"]]/trade["local_maximum"])*100
+				msg.send(msg.from_user.id, "Trade: {}\nTrailing stop percent: {}%\nPrice now: {}\nPrice on maximum: {}\nPercent left to end this trade: {}\nHurray! Hurray!\nHave nice profit on this day!".format(trade["ticker"], trade["trailing_stop_percent"], main_file["price_now"][trade["ticker"]], trade["local_maximum"], percent_to_end_the_trade))
+	else:
+		for trade in main_file["trades"]:
+			if trade["hash_of_transaction"] == msg_text[1]:
+				percent_to_end_the_trade = trade["trailing_stop_percent"] - (1 - main_file["price_now"][trade["ticker"]]/trade["local_maximum"])*100
+				msg.send(msg.from_user.id, "Trade: {}\nTrailing stop percent: {}%\nPrice now: {}\nPrice on maximum: {}\nPercent left to end this trade: {}\nHurray! Hurray!\nHave nice profit on this day!".format(trade["ticker"], trade["trailing_stop_percent"], main_file["price_now"][trade["ticker"]], trade["local_maximum"], percent_to_end_the_trade))
+
+
+
+#transform 0.01 to 2 or 100 to -3 etc.
 def to_number(x):
 	i = 0
 	if x < 1:

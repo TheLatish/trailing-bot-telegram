@@ -14,7 +14,7 @@ bot = telebot.TeleBot("565397863:AAFIvwTm_QE5CYGu_bRSHh6paZWpltM_zMc")
 #This function tells to user information about the bot
 @bot.message_handler(commands = ['start','help'])
 def a3(msg):
-	bot.send_message(msg.from_user.id,"Hi, this is trailing bot. At first you should write new_member {secret key} {api key}.\nFor example: new_member 1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa 1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa\nThen, to add order write add_transaction {ticker} TR {percent}\nFor example: add_transaction BTCUSD TR 12.\nThis is alpha version with a lot of bugs.\nHave fun and please don't lose all your money!")
+	bot.send_message(msg.from_user.id,"Hi, this is trailing bot.\nAt first you should write new_member {secret key} {api key}.\nFor example:\nnew_member 1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa 1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa\nThen, to add order write add_transaction {ticker} TR {percent}\nFor example:\nadd_transaction BTCUSD TR 12.\nThis is alpha version with a lot of bugs.\nHave fun and please don't lose all your money!")
 
 #This function adds json of user. It contains message id, username, transactions list, api and secret key. This json is added to q.vadim file
 @bot.message_handler(regexp= "new_member\s[A-Za-z0-9]{64}\s[A-Za-z0-9]{64}")
@@ -28,7 +28,7 @@ def a1(msg):
 		main_file[msg.from_user.id] = person
 		with open("q.vadim", "w") as outfile:
 			json.dump(main_file, outfile)
-		bot.send_message(msg.from_user.id, "You are successfully added. Your name is {}. Your ID is {}. Your secret key is {}. Your api key is {}. If you want to change your api key or secret key, write this command again".format(msg.from_user.first_name,msg.from_user.id,msg_text[1],msg_text[2]))
+		bot.send_message(msg.from_user.id, "You are successfully added.\nYour name is {}.\nYour ID is {}.\nYour secret key is {}.\nYour api key is {}.\nIf you want to change your api key or secret key, write this command again".format(msg.from_user.first_name,msg.from_user.id,msg_text[1],msg_text[2]))
 	else:
 		bot.send_message(msg.from_user.id, "Message should be in format: new_member {Your secret key} {Your api key}")	
 
@@ -43,35 +43,40 @@ def a2(msg):
 			main_file = json.load(outfile)
 
 		msg_text = msg.text.split(" ")
-		hash_of_transaction = hashlib.sha256(byte(msg.from_user.id), byte(msg_text[1]), byte(msg_text[3])).hexdigest()
+		hasher = hashlib.sha256()
+		hasher.update(str(msg.from_user.id).encode('utf-8') + msg_text[1].encode('utf-8')+ msg_text[3].encode('utf-8'))
+		hash_of_transaction = hasher.hexdigest()
+		print(hash_of_transaction)
 		main_file["trades"].append({"owner_id":msg.from_user.id, "ticker":msg_text[1], "trailing_stop_percent":msg_text[3], "local_maximum": 0, "to_close":False, "hash_of_transaction": hash_of_transaction})
 		with open("q.vadim","w") as outfile:
 			json.dump(main_file, outfile)
-		bot.send_message(msg.from_user.id, "Your order is added. Your transaction ID is {}. With it you can get information about your transaction. Your ID is {}. Your ticker is {}. Your trailing stop percent is {}%. Price now is {}.".format(hash_of_transaction , msg.from_user.id,msg_text[1],msg_text[3],main_file["price_now"][msg_text[1]]))
+		bot.send_message(msg.from_user.id, "Your order is added.\nYour transaction ID is {}.\nWith it you can get information about your transaction.\nYour ID is {}.\nYour ticker is {}.\nYour trailing stop percent is {}%.\nPrice now is {}.".format(hash_of_transaction , msg.from_user.id,msg_text[1],msg_text[3],main_file["price_now"][msg_text[1]]))
 	else:
-		bot.send_message(msg.from_user.id, "Your order isn't added. Message should be in format: add_transaction {FIRSTCURRENCYSECONDCURRENCY} TR {PERCENT}. For example: add_transaction BTCUSDT TR 4")
+		bot.send_message(msg.from_user.id, "Your order isn't added.\nMessage should be in format: add_transaction {FIRSTCURRENCYSECONDCURRENCY} TR {PERCENT}.\nFor example: add_transaction BTCUSDT TR 4")
 
 #Informing about trades
-@bot.message_handler(regexp = ["trades_info\s"])
+@bot.message_handler(regexp = "trades_info")
 def a4(msg):
 	print("New info about order message: " + msg.text)
 	msg_text = msg.text.split(" ")
+	print("--------------------------------------------------------------------------")
 	with open("q.vadim", "r") as outfile:
 			main_file = json.load(outfile)
 	if len(msg_text) == 1:
-		for trade in main_file["trades"]:
-			if trade["id"] == msg.from_user.id:
-				percent_to_end_the_trade = trade["trailing_stop_percent"] - (1 - main_file["price_now"][trade["ticker"]]/trade["local_maximum"])*100
-				msg.send(msg.from_user.id, "Trade: {}\nTrailing stop percent: {}%\nPrice now: {}\nPrice on maximum: {}\nPercent left to end this trade: {}\nHurray! Hurray!\nHave nice profit on this day!".format(trade["ticker"], trade["trailing_stop_percent"], main_file["price_now"][trade["ticker"]], trade["local_maximum"], percent_to_end_the_trade))
+		if list != []:
+			for trade in main_file["trades"]:
+				if trade["owner_id"] == msg.from_user.id:
+					percent_to_end_the_trade = int(trade["trailing_stop_percent"]) - (1 - main_file["price_now"][trade["ticker"]]/trade["local_maximum"])*100
+					bot.send_message(msg.from_user.id, "Trade: {}\nTrailing stop percent: {}%\nPrice now: {}\nPrice on maximum: {}\nPercent left to end this trade: {}\nHurray! Hurray!\nHave nice profit on this day!".format(trade["ticker"], trade["trailing_stop_percent"], main_file["price_now"][trade["ticker"]], trade["local_maximum"], percent_to_end_the_trade))
 	else:
 		for trade in main_file["trades"]:
 			if trade["hash_of_transaction"] == msg_text[1]:
-				percent_to_end_the_trade = trade["trailing_stop_percent"] - (1 - main_file["price_now"][trade["ticker"]]/trade["local_maximum"])*100
-				msg.send(msg.from_user.id, "Trade: {}\nTrailing stop percent: {}%\nPrice now: {}\nPrice on maximum: {}\nPercent left to end this trade: {}\nHurray! Hurray!\nHave nice profit on this day!".format(trade["ticker"], trade["trailing_stop_percent"], main_file["price_now"][trade["ticker"]], trade["local_maximum"], percent_to_end_the_trade))
+				percent_to_end_the_trade = int(trade["trailing_stop_percent"]) - (1 - main_file["price_now"][trade["ticker"]]/trade["local_maximum"])*100
+				bot.send_message(msg.from_user.id, "Trade: {}\nTrailing stop percent: {}%\nPrice now: {}\nPrice on maximum: {}\nPercent left to end this trade: {}\nHurray! Hurray!\nHave nice profit on this day!".format(trade["ticker"], trade["trailing_stop_percent"], main_file["price_now"][trade["ticker"]], trade["local_maximum"], percent_to_end_the_trade))
 
 
 
-#transform 0.01 to 2 or 100 to -3 etc.
+#transform 0.01 to 2 or 100 to -2 etc.
 def to_number(x):
 	i = 0
 	if x < 1:
@@ -166,8 +171,9 @@ if __name__ == "__main__":
 	#Activating process with checking code
 	t1 = Process(target= main_loop)
 	t1.start()
+
 	while True:
 		try:
-			bot.polling()
-		except:
-			time.sleep(5)
+			bot.polling(none_stop = True)
+		except Exception as e:
+			time.sleep(15)

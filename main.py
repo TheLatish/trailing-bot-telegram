@@ -59,7 +59,6 @@ def a2(msg):
 def a4(msg):
 	print("New info about order message: " + msg.text)
 	msg_text = msg.text.split(" ")
-	print("--------------------------------------------------------------------------")
 	with open("q.vadim", "r") as outfile:
 			main_file = json.load(outfile)
 	if len(msg_text) == 1:
@@ -75,6 +74,23 @@ def a4(msg):
 				bot.send_message(msg.from_user.id, "Trade: {}\nTrailing stop percent: {}%\nPrice now: {}\nPrice on maximum: {}\nPercent left to end this trade: {}\nHurray! Hurray!\nHave nice profit on this day!".format(trade["ticker"], trade["trailing_stop_percent"], main_file["price_now"][trade["ticker"]], trade["local_maximum"], percent_to_end_the_trade))
 
 
+#Deletes trade
+@bot.message_handler(regexp = "delete_trade")
+def a5(msg):
+	print("New delete message: " + msg.text)
+	msg_text = msg.text.split(" ")
+	with open("q.vadim", "r") as outfile:
+			main_file = json.load(outfile)
+	if list != []:
+		for trade in main_file["trades"]:
+			if trade["hash_of_transaction"] == msg_text[1]:
+				if trade["owner_id"] == msg.from_user.id:
+					main_file["trades"].remove(trade)
+					bot.send_message(msg.from_user.id, "Your transaction has been removed")
+				else:
+					bot.send_message(msg.from_user.id, "This isn't your transaction")
+	with open("q.vadim","w") as outfile:
+			json.dump(main_file, outfile)
 
 #transform 0.01 to 2 or 100 to -2 etc.
 def to_number(x):

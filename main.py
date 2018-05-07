@@ -171,12 +171,17 @@ def close_orders(trade):
 				break
 		money_to_sold = roundDown(money_to_sold, to_number(float(min_qty)))
 		print(trade["ticker"], "SELL", "MARKET", money_to_sold)
+		if money_to_sold == int(money_to_sold){
+			money_to_sold = int(money_to_sold)
+		}
 		order = client.new_order(trade["ticker"],"SELL","MARKET",None, money_to_sold)
 		bot.send_message(trade["owner_id"], "I have put order. Ticker: {}".format(trade["ticker"]))
 		with open("q.vadim", "w") as outfile:
 			json.dump(main_file,outfile)
 	except Exception as e:
 		bot.send_message(123446626, e)
+
+
 
 if __name__ == "__main__":
 	print("Programm is starting")

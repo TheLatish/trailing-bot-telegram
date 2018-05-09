@@ -14,7 +14,7 @@ bot = telebot.TeleBot("565397863:AAFIvwTm_QE5CYGu_bRSHh6paZWpltM_zMc")
 #This function tells to user information about the bot
 @bot.message_handler(commands = ['start','help'])
 def a3(msg):
-	bot.send_message(msg.from_user.id,"Hi, this is trailing bot.\nAt first you should write new_member {secret key} {api key}.\nFor example:\nnew_member 1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa 1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa1fsaevsa\nThen, to add order write add_transaction {ticker} TR {percent}\nFor example:\nadd_transaction BTCUSD TR 12.\nThis is alpha version with a lot of bugs.\nHave fun and please don't lose all your money!")
+	bot.send_message(msg.from_user.id,"Hi, this is trailing bot.\nAt first you should write new_member {secret key} {api key}.\nThen, to add order write add_transaction {ticker} TR {percent}\nThis is alpha version with a lot of bugs.\nHave fun and please don't lose all your money!")
 
 #This function adds json of user. It contains message id, username, transactions list, api and secret key. This json is added to q.vadim file
 @bot.message_handler(regexp= "new_member\s[A-Za-z0-9]{64}\s[A-Za-z0-9]{64}")
@@ -22,6 +22,11 @@ def a1(msg):
 	print("New message: " + msg.text)
 	msg_text = msg.text.split(" ")
 	if msg_text[0] == "new_member" and len(msg_text[1]) == 64 and len(msg_text[2]) == 64:
+		try:
+			client = BinanceRESTAPI(msg_text[2], msg_text[1])
+		except:
+			bot.send_message(msg.from_user.id, "Your binance key is not valid. Please try again. Message should be in format: new_member {Your secret key} {Your api key}")
+			return
 		with open("q.vadim", "r") as outfile:	
 			main_file = json.load(outfile)
 		person = {"name" : msg.from_user.first_name, "id" : msg.from_user.id,"secret":msg_text[1], "api":msg_text[2]}
@@ -30,7 +35,7 @@ def a1(msg):
 			json.dump(main_file, outfile)
 		bot.send_message(msg.from_user.id, "You are successfully added.\nYour name is {}.\nYour ID is {}.\nYour secret key is {}.\nYour api key is {}.\nIf you want to change your api key or secret key, write this command again".format(msg.from_user.first_name,msg.from_user.id,msg_text[1],msg_text[2]))
 	else:
-		bot.send_message(msg.from_user.id, "Message should be in format: new_member {Your secret key} {Your api key}")	
+		bot.send_message(msg.from_user.id, "Message should be in format: new_member {Your secret key} {Your api key}.")	
 
 
 #This function adds transactions to the list off transactions
@@ -41,7 +46,9 @@ def a2(msg):
 	if msg_text[0] == "add_transaction" and len(msg_text[1]) <= 10 and msg_text[2] == "TR" and msg_text[3].isdigit():
 		with open("q.vadim", "r") as outfile:
 			main_file = json.load(outfile)
-
+		if outfile.get(str(msg.from_user.id)) == None:
+			bot.send_message(msg.from_user.id, "You are not registered.\nPlease add new new_member.\nMessage should be in format: new_member {Your secret key} {Your api key}.")
+			return
 		msg_text = msg.text.split(" ")
 		hasher = hashlib.sha256()
 		hasher.update(str(msg.from_user.id).encode('utf-8') + msg_text[1].encode('utf-8')+ msg_text[3].encode('utf-8'))
@@ -173,7 +180,6 @@ def close_orders(trade):
 		print(trade["ticker"], "SELL", "MARKET", money_to_sold)
 		if money_to_sold == int(money_to_sold):
 			money_to_sold = int(money_to_sold)
-		
 		order = client.new_order(trade["ticker"],"SELL","MARKET",None, money_to_sold)
 		bot.send_message(trade["owner_id"], "I have put order. Ticker: {}".format(trade["ticker"]))
 		with open("q.vadim", "w") as outfile:

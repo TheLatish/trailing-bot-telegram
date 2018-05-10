@@ -14,7 +14,7 @@ bot = telebot.TeleBot("565397863:AAFIvwTm_QE5CYGu_bRSHh6paZWpltM_zMc")
 #This function tells to user information about the bot
 @bot.message_handler(commands = ['start','help'])
 def a3(msg):
-	bot.send_message(msg.from_user.id,"Hi, this is trailing bot.\nAt first you should write new_member {secret key} {api key}.\nThen, to add order write add_transaction {ticker} TR {percent}\nThis is alpha version with a lot of bugs.\nHave fun and please don't lose all your money!")
+	bot.send_message(msg.from_user.id,"Hi, this is trailing bot.\nAt first you should write new_member {secret key} {api key}.\nThen, to add order write add_transaction {ticker} TR {percent}\nTo find information about trades write trend_info.\nTo delete trade write delete_trade {transaction id}\nThis is alpha version with a lot of bugs.\nHave fun and please don't lose all your money!")
 
 #This function adds json of user. It contains message id, username, transactions list, api and secret key. This json is added to q.vadim file
 @bot.message_handler(regexp= "new_member\s[A-Za-z0-9]{64}\s[A-Za-z0-9]{64}")
